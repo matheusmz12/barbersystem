@@ -27,16 +27,15 @@ function validarServico(data) {
       message: "A duração do serviço deve ser um número inteiro positivo.",
     };
 
-
-    return{
-        valido: true,
-        dados:{
-            nome: nome.trim(),
-            preco,
-            duracaoMinutos
-        }
-    }
-//   return { valido: true };
+  return {
+    valido: true,
+    dados: {
+      nome: nome.trim(),
+      preco,
+      duracaoMinutos,
+    },
+  };
+  //   return { valido: true };
 }
 
 class ServicoController {
@@ -108,6 +107,48 @@ class ServicoController {
     } catch (error) {
       console.error("Erro ao atualizar serviço:", error);
       return res.status(500).json({ message: "Erro ao atualizar serviço" });
+    }
+  }
+
+  static async desativar(req, res) {
+    try {
+      const { id } = req.params;
+      const servico = await Servico.findByPk(id);
+
+      if (!servico) {
+        return res.status(404).json({ message: "Serviço não encontrado" });
+      }
+
+      if (!servico.ativo) {
+        return res.status(409).json({ message: "Serviço já está desativado" });
+      }
+
+      await servico.update({ ativo: false });
+      return res.status(200).json(servico);
+    } catch (error) {
+      console.error("Erro ao desativar serviço:", error);
+      return res.status(500).json({ message: "Erro ao desativar serviço" });
+    }
+  }
+
+  static async reativar(req, res) {
+    try {
+      const {id } = req.params;
+      const servico = await Servico.findByPk(id);
+
+      if (!servico){
+        return res.status(404).json({ message: "Serviço não encontrado" });
+      }
+
+      if (servico.ativo) {
+        return res.status(409).json({ message: "Serviço já está ativo" });
+      }
+
+      await servico.update({ ativo: true });
+      return res.status(200).json(servico);
+    } catch (error) {
+      console.error("Erro ao reativar serviço:", error);
+      return res.status(500).json({ message: "Erro ao reativar serviço" });
     }
   }
 }
