@@ -1,42 +1,5 @@
 import { Servico } from "../models/associations.js";
-
-function validarServico(data) {
-  const { nome, preco, duracaoMinutos } = data;
-
-  if (typeof nome !== "string" || nome.trim() === "") {
-    return { valido: false, message: "O nome do serviço é obrigatório." };
-  }
-
-  if (nome.trim().length > 100) {
-    return {
-      valido: false,
-      message: "O nome pode ter no máximo 100 caracteres.",
-    };
-  }
-
-  if (typeof preco !== "number" || preco < 0) {
-    return {
-      valido: false,
-      message: "O preço do serviço não pode ser negativo.",
-    };
-  }
-
-  if (!Number.isInteger(duracaoMinutos) || duracaoMinutos <= 0)
-    return {
-      valido: false,
-      message: "A duração do serviço deve ser um número inteiro positivo.",
-    };
-
-  return {
-    valido: true,
-    dados: {
-      nome: nome.trim(),
-      preco,
-      duracaoMinutos,
-    },
-  };
-  //   return { valido: true };
-}
+import { servicoSchema } from "../schemas/servicoSchema.js";
 
 class ServicoController {
   static async listar(req, res) {
@@ -57,14 +20,15 @@ class ServicoController {
 
   static async criar(req, res) {
     try {
-      const { nome, preco, duracaoMinutos } = req.body;
-
-      const validacao = validarServico({ nome, preco, duracaoMinutos });
-      if (!validacao.valido) {
-        return res.status(400).json({ message: validacao.message });
+      
+      const resultado = servicoSchema.safeParse(req.body);
+      if (!resultado.success) {
+        return res
+          .status(400)
+          .json({ message: resultado.error.issues[0].message });
       }
 
-      const novoServico = await Servico.create(validacao.dados);
+      const novoServico = await Servico.create(resultado.data);
       return res.status(201).json(novoServico);
     } catch (error) {
       console.error("Erro ao criar serviço:", error);
@@ -90,11 +54,13 @@ class ServicoController {
   static async atualizar(req, res) {
     try {
       const { id } = req.params;
-      const { nome, preco, duracaoMinutos } = req.body;
+      const resultado = servicoSchema.safeParse(req.body);
 
-      const validacao = validarServico({ nome, preco, duracaoMinutos });
-      if (!validacao.valido) {
-        return res.status(400).json({ message: validacao.message });
+
+     if (!resultado.success) {
+        return res
+          .status(400)
+          .json({ message: resultado.error.issues[0].message });
       }
 
       const servico = await Servico.findByPk(id);
@@ -102,7 +68,7 @@ class ServicoController {
         return res.status(404).json({ message: "Serviço não encontrado" });
       }
 
-      await servico.update(validacao.dados);
+      await servico.update(resultado.data);
       return res.status(200).json(servico);
     } catch (error) {
       console.error("Erro ao atualizar serviço:", error);
@@ -133,10 +99,10 @@ class ServicoController {
 
   static async reativar(req, res) {
     try {
-      const {id } = req.params;
+      const { id } = req.params;
       const servico = await Servico.findByPk(id);
 
-      if (!servico){
+      if (!servico) {
         return res.status(404).json({ message: "Serviço não encontrado" });
       }
 

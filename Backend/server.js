@@ -15,9 +15,13 @@ app.use(express.json());
 
 //importe das rotas
 import ServicoRoutes from "./routes/ServicoRoutes.js";
+import BarbeiroRoutes from "./routes/BarbeiroRoutes.js"; 
+import AgendamentoRoutes from "./routes/AgendamentoRoutes.js";
 
 //rotas
 app.use("/servicos", ServicoRoutes);
+app.use("/barbeiros", BarbeiroRoutes); 
+app.use("/agendamentos", AgendamentoRoutes);
 
 
 // Rota de health check

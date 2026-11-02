@@ -14,6 +14,10 @@ Agendamento.init(
       type: DataTypes.DATE,
       allowNull: false,
     },
+    dataHoraFim:{
+      type:DataTypes.DATE,
+      allowNull: false,
+    },
     status: {
       type: DataTypes.ENUM("agendado", "concluido", "cancelado"),
       allowNull: false,
