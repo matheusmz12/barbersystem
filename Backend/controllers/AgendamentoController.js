@@ -7,7 +7,10 @@ import {
   Servico,
 } from "../models/associations.js";
 
-import { agendamentoSchema } from "../schemas/agendamentoSchema.js";
+import {
+  agendamentoSchema,
+  listarAgendamentoSchema,
+} from "../schemas/agendamentoSchema.js";
 import { calcularFim } from "../utils/horario.js";
 
 class AgendamentoController {
@@ -34,7 +37,10 @@ class AgendamentoController {
         // Verificar se o barbeiro existe e está ativo
 
         if (!barbeiro) {
-         return { status: 404, body: { message: "Barbeiro não encontrado ou inativo" } };
+          return {
+            status: 404,
+            body: { message: "Barbeiro não encontrado ou inativo" },
+          };
         }
 
         // Verificar se o serviço existe e está ativo
@@ -43,7 +49,10 @@ class AgendamentoController {
           transaction: t,
         });
         if (!servico) {
-         return { status: 404, body: { message: "Serviço não encontrado ou inativo" } };
+          return {
+            status: 404,
+            body: { message: "Serviço não encontrado ou inativo" },
+          };
         }
 
         // Calcular o horário de término do agendamento
@@ -61,7 +70,12 @@ class AgendamentoController {
         });
 
         if (conflito) {
-         return { status: 409, body: { message: "Conflito de agendamento para o barbeiro nesse horário" } };
+          return {
+            status: 409,
+            body: {
+              message: "Conflito de agendamento para o barbeiro nesse horário",
+            },
+          };
         }
 
         // Buscar o cliente pelo telefone ou criar (mantém o nome antigo)
@@ -81,7 +95,7 @@ class AgendamentoController {
             dataHoraFim,
             precoCobrado: servico.preco,
           },
-          { transaction: t, }
+          { transaction: t },
         );
         return { status: 201, body: agendamento };
       });
@@ -93,15 +107,41 @@ class AgendamentoController {
     }
   }
 
-  static async listar(req, res){
+  static async listar(req, res) {
     try {
+      const resultado = listarAgendamentoSchema.safeParse(req.query);
+      if (!resultado.success) {
+        return res
+          .status(400)
+          .json({ message: resultado.error.issues[0].message });
+      }
+
+      const { data, barbeiroId } = resultado.data;
+
+      const where = {};
+      if (barbeiroId) {
+        where.barbeiroId = barbeiroId;
+      }
+
+      if (data) {
+        const inicio = new Date(`${data}T00:00:00`);
+        const fim = new Date(inicio);
+        fim.setDate(fim.getDate() + 1); // Adiciona um dia para incluir todo o dia
+
+        where.dataHora = {
+          [Op.gte]: inicio,
+          [Op.lt]: fim,
+        };
+      }
+
       const agendamentos = await Agendamento.findAll({
         include: [
-          { model: Cliente, attributes: ['id', 'nome', 'telefone'] },
-          { model: Barbeiro, attributes: ['id', 'nome'] },
-          { model: Servico, attributes: ['id', 'nome',] }
+          { model: Cliente, attributes: ["id", "nome", "telefone"] },
+          { model: Barbeiro, attributes: ["id", "nome"] },
+          { model: Servico, attributes: ["id", "nome"] },
         ],
-        order: [['dataHora', 'ASC']]
+        order: [["dataHora", "ASC"]],
+        where,
       });
 
       return res.status(200).json(agendamentos);

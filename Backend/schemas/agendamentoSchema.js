@@ -33,3 +33,13 @@ export const agendamentoSchema = z.object({
     .transform((valor) => new Date(valor))
     .refine((data) => data > new Date(), "Não é possível agendar no passado."),
 });
+
+
+export const listarAgendamentoSchema = z.object({
+  data: z.iso.date({error: "Data inválida. Use o formato AAAA-MM-DD."}).optional(),
+  barbeiroId: z.coerce
+  .number({ error: "O ID do barbeiro deve ser um número." })
+  .int("O ID do barbeiro deve ser um número inteiro.")
+  .positive("O ID do barbeiro deve ser um número positivo.")
+  .optional(),
+});
