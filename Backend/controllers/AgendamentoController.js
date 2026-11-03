@@ -92,6 +92,24 @@ class AgendamentoController {
       return res.status(500).json({ message: "Erro ao criar agendamento" });
     }
   }
+
+  static async listar(req, res){
+    try {
+      const agendamentos = await Agendamento.findAll({
+        include: [
+          { model: Cliente, attributes: ['id', 'nome', 'telefone'] },
+          { model: Barbeiro, attributes: ['id', 'nome'] },
+          { model: Servico, attributes: ['id', 'nome',] }
+        ],
+        order: [['dataHora', 'ASC']]
+      });
+
+      return res.status(200).json(agendamentos);
+    } catch (error) {
+      console.error("Erro ao listar agendamentos:", error);
+      return res.status(500).json({ message: "Erro ao listar agendamentos" });
+    }
+  }
 }
 
 export default AgendamentoController;
