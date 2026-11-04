@@ -13,7 +13,6 @@ import {
 } from "../schemas/agendamentoSchema.js";
 import { calcularFim } from "../utils/horario.js";
 
-
 const incluirRelacionados = [
   { model: Cliente, attributes: ["id", "nome", "telefone"] },
   { model: Barbeiro, attributes: ["id", "nome"] },
@@ -171,6 +170,59 @@ class AgendamentoController {
       return res.status(500).json({
         message: "Erro ao buscar agendamento por ID",
       });
+    }
+  }
+
+  static async concluir(req, res) {
+    try {
+      const { id } = req.params;
+      const agendamento = await Agendamento.findByPk(id);
+
+      if (!agendamento) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+
+      if (agendamento.status !== "agendado") {
+        return res.status(409).json({
+          message: `Não é possível concluir um agendamento com status ${agendamento.status}.`,
+        });
+      }
+
+      if (agendamento.dataHora > new Date()) {
+        return res.status(409).json({
+          message:
+            "Não é possível concluir um agendamento que ainda não começou.",
+        });
+      }
+
+      await agendamento.update({ status: "concluido" });
+      return res.status(200).json(agendamento);
+    } catch (error) {
+      console.error("Erro ao concluir agendamento:", error);
+      return res.status(500).json({ message: "Erro ao concluir agendamento" });
+    }
+  }
+
+  static async cancelar(req, res) {
+    try {
+      const { id } = req.params;
+      const agendamento = await Agendamento.findByPk(id);
+
+      if (!agendamento) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+
+      if (agendamento.status !== "agendado") {
+        return res.status(409).json({
+          message: `Não é possível cancelar um agendamento com status ${agendamento.status}.`,
+        });
+      }
+
+      await agendamento.update({ status: "cancelado" });
+      return res.status(200).json(agendamento);
+    } catch (error) {
+      console.error("Erro ao cancelar agendamento:", error);
+      return res.status(500).json({ message: "Erro ao cancelar agendamento" });
     }
   }
 }
