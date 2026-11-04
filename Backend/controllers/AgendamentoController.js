@@ -13,6 +13,13 @@ import {
 } from "../schemas/agendamentoSchema.js";
 import { calcularFim } from "../utils/horario.js";
 
+
+const incluirRelacionados = [
+  { model: Cliente, attributes: ["id", "nome", "telefone"] },
+  { model: Barbeiro, attributes: ["id", "nome"] },
+  { model: Servico, attributes: ["id", "nome"] },
+];
+
 class AgendamentoController {
   static async criar(req, res) {
     try {
@@ -135,11 +142,7 @@ class AgendamentoController {
       }
 
       const agendamentos = await Agendamento.findAll({
-        include: [
-          { model: Cliente, attributes: ["id", "nome", "telefone"] },
-          { model: Barbeiro, attributes: ["id", "nome"] },
-          { model: Servico, attributes: ["id", "nome"] },
-        ],
+        include: incluirRelacionados,
         order: [["dataHora", "ASC"]],
         where,
       });
@@ -148,6 +151,26 @@ class AgendamentoController {
     } catch (error) {
       console.error("Erro ao listar agendamentos:", error);
       return res.status(500).json({ message: "Erro ao listar agendamentos" });
+    }
+  }
+
+  static async buscarPorId(req, res) {
+    try {
+      const { id } = req.params;
+      const agendamento = await Agendamento.findByPk(id, {
+        include: incluirRelacionados,
+      });
+
+      if (!agendamento) {
+        return res.status(404).json({ message: "Agendamento não encontrado" });
+      }
+
+      return res.status(200).json(agendamento);
+    } catch (error) {
+      console.error("Erro ao buscar agendamento por ID:", error);
+      return res.status(500).json({
+        message: "Erro ao buscar agendamento por ID",
+      });
     }
   }
 }

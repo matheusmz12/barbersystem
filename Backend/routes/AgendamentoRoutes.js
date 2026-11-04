@@ -5,5 +5,6 @@ const router = express.Router();
 
 router.post("/", AgendamentoController.criar);
 router.get("/", AgendamentoController.listar);
+router.get("/:id", AgendamentoController.buscarPorId);
 
 export default router;
