@@ -1,5 +1,10 @@
 import { Op } from "sequelize";
 import sequelize from "../config/conn.js";
+
+import { DIAS_FECHADOS } from "../config/funcionamento.js";
+
+import { calcularFim, gerarCandidatos, conflita } from "../utils/horario.js";
+
 import {
   Agendamento,
   Barbeiro,
@@ -10,8 +15,8 @@ import {
 import {
   agendamentoSchema,
   listarAgendamentoSchema,
+  horariosLivresSchema,
 } from "../schemas/agendamentoSchema.js";
-import { calcularFim } from "../utils/horario.js";
 
 const incluirRelacionados = [
   { model: Cliente, attributes: ["id", "nome", "telefone"] },
@@ -223,6 +228,87 @@ class AgendamentoController {
     } catch (error) {
       console.error("Erro ao cancelar agendamento:", error);
       return res.status(500).json({ message: "Erro ao cancelar agendamento" });
+    }
+  }
+
+  static async horariosLivres(req, res) {
+    try {
+      // 1. validar → 400
+
+      const resultado = horariosLivresSchema.safeParse(req.query);
+      if (!resultado.success) {
+        return res
+          .status(400)
+          .json({ message: resultado.error.issues[0].message });
+      }
+
+      const { data, barbeiroId, servicoId } = resultado.data;
+
+      // 2. dia fechado? → 200 com []
+      const inicioDoDia = new Date(`${data}T00:00:00`);
+
+      if (DIAS_FECHADOS.includes(inicioDoDia.getDay())) {
+        return res.status(200).json([]);
+      }
+
+      // 3 e 4. barbeiro e serviço → 404
+      const barbeiro = await Barbeiro.findOne({
+        where: { id: barbeiroId, ativo: true },
+      });
+
+      if (!barbeiro) {
+        return res
+          .status(404)
+          .json({ message: "Barbeiro não encontrado ou inativo" });
+      }
+
+      const servico = await Servico.findOne({
+        where: { id: servicoId, ativo: true },
+      });
+
+      if (!servico) {
+        return res
+          .status(404)
+          .json({ message: "Serviço não encontrado ou inativo" });
+      }
+
+      // 5. agendamentos do barbeiro no dia, UMA consulta só
+
+      const fimDoDia = new Date(inicioDoDia);
+      fimDoDia.setDate(fimDoDia.getDate() + 1);
+
+      const agendamentos = await Agendamento.findAll({
+        where: {
+          barbeiroId,
+          status: { [Op.ne]: "cancelado" },
+          dataHora: { [Op.gte]: inicioDoDia, [Op.lt]: fimDoDia },
+        },
+      });
+
+      // 6. todos os horarios possiveis
+      const candidatos = gerarCandidatos(data, servico.duracaoMinutos);
+
+      // 7. filtrar os que não conflitam
+      const agora = new Date();
+
+      const livres = candidatos.filter((inicio) => {
+        const fim = calcularFim(inicio, servico.duracaoMinutos);
+
+        const noFuturo = inicio > agora;
+        const semConflito = !agendamentos.some((agendamento) => {
+          return conflita(inicio, fim , agendamento.dataHora, agendamento.dataHoraFim);
+        });
+
+        return noFuturo && semConflito;
+      });
+
+      // 8. retornar
+      return res.status(200).json(livres);
+    } catch (error) {
+      console.error("Erro ao buscar horários livres:", error);
+      return res
+        .status(500)
+        .json({ message: "Erro ao buscar horários livres" });
     }
   }
 }

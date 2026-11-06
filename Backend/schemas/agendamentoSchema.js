@@ -43,3 +43,15 @@ export const listarAgendamentoSchema = z.object({
   .positive("O ID do barbeiro deve ser um número positivo.")
   .optional(),
 });
+
+export const horariosLivresSchema = z.object({
+  data: z.iso.date({error: "Data inválida. Use o formato AAAA-MM-DD."}),
+  barbeiroId: z.coerce
+  .number({ error: "O ID do barbeiro deve ser um número." })
+  .int("O ID do barbeiro deve ser um número inteiro.")
+  .positive("O ID do barbeiro deve ser um número positivo."),
+  servicoId: z.coerce
+  .number({ error: "O ID do serviço deve ser um número." })
+  .int("O ID do serviço deve ser um número inteiro.")
+  .positive("O ID do serviço deve ser um número positivo."),
+})
