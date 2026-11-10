@@ -2,6 +2,7 @@ import Cliente from "./Cliente.js";
 import Barbeiro from "./Barbeiro.js";
 import Servico from "./Servico.js";
 import Agendamento from "./Agendamento.js";
+import Admin from "./Admin.js";
 
 Cliente.hasMany(Agendamento, { foreignKey: "clienteId" });
 Agendamento.belongsTo(Cliente, { foreignKey: "clienteId" });
@@ -12,4 +13,4 @@ Agendamento.belongsTo(Servico, { foreignKey: "servicoId" });
 Barbeiro.hasMany(Agendamento, { foreignKey: "barbeiroId" });
 Agendamento.belongsTo(Barbeiro, { foreignKey: "barbeiroId" });
 
-export { Cliente, Barbeiro, Servico, Agendamento };
+export { Cliente, Barbeiro, Servico, Agendamento, Admin };
