@@ -1,0 +1,1 @@
+export const TEMPO_EXPIRACAO_TOKEN = "8h";
