@@ -23,7 +23,7 @@ import AuthRoutes from "./routes/AuthRoutes.js"
 app.use("/servicos", ServicoRoutes);
 app.use("/barbeiros", BarbeiroRoutes); 
 app.use("/agendamentos", AgendamentoRoutes);
-app.use("/login", AuthRoutes)
+app.use("/auth", AuthRoutes)
 
 
 // Rota de health check
