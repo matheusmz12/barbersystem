@@ -1,13 +1,14 @@
 import express from "express";
 import BarbeiroController from "../controllers/BarbeiroController.js";
+import autenticar from "../middlewares/autenticar.js";
 
 const router = express.Router();
 
 router.get("/", BarbeiroController.listar);
-router.post("/", BarbeiroController.criar);
+router.post("/",autenticar, BarbeiroController.criar);
 router.get("/:id", BarbeiroController.buscarPorId);
-router.put("/:id", BarbeiroController.atualizar);
-router.patch("/:id/desativar", BarbeiroController.desativar);
-router.patch("/:id/reativar", BarbeiroController.reativar);
+router.put("/:id",autenticar, BarbeiroController.atualizar);
+router.patch("/:id/desativar",autenticar, BarbeiroController.desativar);
+router.patch("/:id/reativar",autenticar, BarbeiroController.reativar);
 
 export default router;

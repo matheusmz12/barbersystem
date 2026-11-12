@@ -1,6 +1,6 @@
 import { Op } from "sequelize";
 import { Barbeiro } from "../models/associations.js";
-import { barbeiroSchema } from "../schemas/barbeiroSchema.js"
+import { barbeiroSchema } from "../schemas/barbeiroSchema.js";
 
 class BarbeiroController {
   static async listar(req, res) {
@@ -9,6 +9,7 @@ class BarbeiroController {
         where: {
           ativo: true,
         },
+        attributes: ["id", "nome"],
         order: [["nome", "ASC"]],
       });
       return res.status(200).json(barbeiros);
@@ -21,8 +22,8 @@ class BarbeiroController {
   static async criar(req, res) {
     try {
       const resultado = barbeiroSchema.safeParse(req.body);
-      if(!resultado.success){
-         return res
+      if (!resultado.success) {
+        return res
           .status(400)
           .json({ message: resultado.error.issues[0].message });
       }
@@ -52,11 +53,9 @@ class BarbeiroController {
     } catch (error) {
       // Rede de segurança: duas requisições ao mesmo tempo podem passar pelo findOne
       if (error.name === "SequelizeUniqueConstraintError") {
-        return res
-          .status(409)
-          .json({
-            message: "Já existe um barbeiro cadastrado com este telefone.",
-          });
+        return res.status(409).json({
+          message: "Já existe um barbeiro cadastrado com este telefone.",
+        });
       }
       console.error("Erro ao criar barbeiro:", error);
       return res.status(500).json({ message: "Erro ao criar barbeiro" });
@@ -66,9 +65,13 @@ class BarbeiroController {
   static async buscarPorId(req, res) {
     try {
       const { id } = req.params;
-      const barbeiro = await Barbeiro.findByPk(id);
 
-      if (!barbeiro || !barbeiro.ativo) {
+      const barbeiro = await Barbeiro.findOne({
+        where: {id,ativo: true},
+        attributes: ["id", "nome"]
+      });
+
+      if (!barbeiro) {
         return res.status(404).json({ message: "Barbeiro não encontrado" });
       }
 
@@ -82,12 +85,14 @@ class BarbeiroController {
   static async atualizar(req, res) {
     try {
       const { id } = req.params;
-      const resultado = barbeiroSchema.safeParse(req.body)
+      const resultado = barbeiroSchema.safeParse(req.body);
 
-      if(!resultado.success){
-        return res.status(400).json({ message: resultado.error.issues[0].message})
+      if (!resultado.success) {
+        return res
+          .status(400)
+          .json({ message: resultado.error.issues[0].message });
       }
-    
+
       const barbeiro = await Barbeiro.findByPk(id);
       if (!barbeiro) {
         return res.status(404).json({ message: "Barbeiro não encontrado" });
